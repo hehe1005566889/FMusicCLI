@@ -1,0 +1,9 @@
+[submodule "libraries/HTTPRequest"]
+	path = libraries/HTTPRequest
+	url = https://github.com/elnormous/HTTPRequest.git
+[submodule "libraries/taglib"]
+	path = libraries/taglib
+	url = https://github.com/taglib/taglib.git
+[submodule "libraries/FTXUI"]
+	path = libraries/FTXUI
+	url = https://github.com/ArthurSonzogni/FTXUI.git
