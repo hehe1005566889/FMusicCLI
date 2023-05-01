@@ -7,3 +7,6 @@
 [submodule "libraries/FTXUI"]
 	path = libraries/FTXUI
 	url = https://github.com/ArthurSonzogni/FTXUI.git
+[submodule "libraries/libid3tag"]
+	path = libraries/libid3tag
+	url = https://github.com/audacity/libid3tag.git
