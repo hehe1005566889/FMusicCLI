@@ -62,6 +62,9 @@ void NetEaseAPI::DownloadMusic(const char *id, const char *path)
 
         _manager->SendRequestSyncForFile(info2, name.c_str());
 
+        if(type.asCString() == "m4a")
+        return;
+
         ManagerInfo info4;
         info4.uri = CreateUri(LRYIC_URL, {id});
         _manager->SendRequestSync(info4);
