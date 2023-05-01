@@ -8,6 +8,7 @@
 
 #include "apiplatform/MusicAPI.hpp"
 
+#define LRYIC_URL "http://cloud-music.pl-fe.cn/lyric?id={}"
 #define SERACH_URL "http://cloud-music.pl-fe.cn/search?keywords="
 #define LOGIN_URL "http://cloud-music.pl-fe.cn/login/cellphone?"
 
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
             DownloadMusic();
             break;
             case 3:
-
+            DownloadPlayList();
             break;
             case 4:
             Login();
@@ -132,8 +133,11 @@ void DrawMenu(void (*callback)(int select), std::initializer_list<const char *> 
 void CheckStage()
 {
     _p_login = std::filesystem::exists("login.def");
+    try{
     std::filesystem::create_directory("musics");
     std::filesystem::create_directory("playlists");
+    }catch(std::exception)
+    { }
 }
 
 static std::string keyword;
@@ -156,58 +160,24 @@ void DownloadPlayList()
 {
     DrawQuestion([](const char* data) {playlist = data;}, {"Please Enter PlayList Id -> ", ">? How To Get The Id?", "> At The End Of Your PlayList WebPage's Uri" });
 
+    PlayListInfo pinfo;
+    _api->FetchPlayListInfo(playlist.c_str(), pinfo);
 
-    ManagerInfo info;
-    std::string uri("http://music.163.com/api/song/enhance/player/url?id=123456&ids=[");
-    uri.append(playlist).append("]&br=3200000");
-    info.uri = uri;
+    DrawInfo({ "PlayList Info ->", "PlayList Name :", pinfo.Name.c_str(), "PlayList Info :",  pinfo.Info.c_str(), "Play List Music Count :", std::to_string(pinfo.Ids.size()).c_str(), ""});
+    
+    int index = 1;
+    _api->DownloadPlayList(pinfo, [](const PlayListInfo& info){
+        printf("=> Download Index %i/%i\n", info.index, info.max);
+    });
 
-    Manager->SendRequestSync(info);
-
-    printf("=> Debug %s\n", info.output.c_str());
+    playlist.clear();
 }
 
 static std::string musicid;
 void DownloadMusic()
 {
     DrawQuestion([](const char* data) {musicid = data;}, {"Please Enter Music Id -> ", ">? How To Get The Id?", "> Using Mode 1 To Search Music Id" });
-
-    ManagerInfo info;
-    info.uri = CreateUri("http://music.163.com/api/song/enhance/player/url?id=123456&ids=[{}]&br=3200000", { musicid.c_str() });
-
-    Manager->SendRequestSync(info);
-    auto root = json::parse(info.output);
-
-    auto url = root["data"][0]["url"];
-    DEBUG(url.asCString());
-    auto type = root["data"][0]["type"];
-
-    ManagerInfo info1;
-    info1.uri = CreateUri("http://cloud-music.pl-fe.cn/song/detail?ids={}", {musicid.c_str()});
-
-    Manager->SendRequestSync(info1);
-    auto root2 = json::parse(info1.output);
-    auto songname = root2["songs"][0]["name"].asCString();
-
-    std::string artists;
-    for (auto item : root2["songs"][0]["ar"])
-    {
-        artists.append(item["name"].asCString()).append("-");
-    }
-    artists.substr(artists.find_last_of("-") - 1);
-    DELOBJ(info1);
-
-    ManagerInfo info2;
-    info2.uri = (url.asCString());
-
-    std::string name;
-    name.append(songname).append("=").append(artists).append(".").append(type.asCString()); //todo replace m4a filetype
-
-    Manager->SendRequestSyncForFile(info2, name.c_str());
-    musicid.clear();
-    DELOBJ(info);
-    DELOBJ(info2);
-
+    _api->DownloadMusic(musicid.c_str());
     DrawInfo({"Download Started...", "If There No Any 'File Open Error' Or 'Err XXXXXX' Notification", "That Mean Music Download Succeed"});
 }
 
